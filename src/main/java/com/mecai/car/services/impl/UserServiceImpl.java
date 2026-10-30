@@ -4,7 +4,6 @@ import java.time.Instant;
 import java.util.UUID;
 
 import org.apache.commons.lang3.RandomStringUtils;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -31,11 +30,8 @@ import com.mecai.car.models.User;
 import com.mecai.car.models.enums.Role;
 import com.mecai.car.repository.TenantRepository;
 import com.mecai.car.repository.UserRepository;
+import com.mecai.car.services.EmailService;
 import com.mecai.car.services.UserService;
-import com.resend.Resend;
-import com.resend.core.exception.ResendException;
-import com.resend.services.emails.model.CreateEmailOptions;
-import com.resend.services.emails.model.CreateEmailResponse;
 
 import io.jsonwebtoken.JwtException;
 import lombok.RequiredArgsConstructor;
@@ -47,12 +43,7 @@ public class UserServiceImpl implements UserService {
     private final TenantRepository tenantRepository;
     private final JwtService jwtService;
     private final PasswordEncoder passwordEncoder;
-
-    @Value("${resend.key}")
-    private String key;
-
-    @Value("${resend.email}")
-    private String resendEmail;
+    private final EmailService emailService;
 
     @Override
     public ResponseDto<GetUserDto> createUser(CreateUserDto createUserDto){
@@ -113,28 +104,7 @@ public class UserServiceImpl implements UserService {
 
             User saved = userRepository.save(user);
 
-            Resend resend = new Resend(key);
-
-            CreateEmailOptions params = CreateEmailOptions.builder()
-                    .from("Rodantex <" + resendEmail + ">")
-                    .to(saved.getEmail())
-                    .subject("Registro a Rodantex")
-                    .html("""
-                            <div>
-                                <strong>¡Bienvenido a Rodantex!</strong>
-                                <p>Has quedado registrado exitosamente.</p>
-                                <p>Accede a la plataforma con tu correo y contraseña proporcionados a continuación:</p>
-                                <p><b>Correo:</b> %s</p>
-                                <p><b>Contraseña:</b> %s</p>
-                            </div>
-                            """.formatted(saved.getEmail(), tempPassword))
-                    .build();
-            try {
-                CreateEmailResponse data = resend.emails().send(params);
-                System.out.println(data.getId());
-            } catch (ResendException e) {
-                e.printStackTrace();
-            }
+            emailService.enviarBienvenida(saved.getEmail(), tempPassword);
 
             GetUserDto result = new GetUserDto(
                 saved.getId(),
