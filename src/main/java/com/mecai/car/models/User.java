@@ -1,9 +1,9 @@
-package com.mecai.car.model;
+package com.mecai.car.models;
 
 import java.time.Instant;
 import java.util.UUID;
 
-import com.mecai.car.model.enums.Role;
+import com.mecai.car.models.enums.Role;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -17,14 +17,19 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
+/**
+ * Tabla que lleva la gestión y el almacenamiento de los datos de usuarios.
+ * User
+ */
 @Data
 @Entity
-@Table(name="users", uniqueConstraints = @UniqueConstraint(columnNames = {"email", "tenant_id"}))
+// El email es único globalmente entre usuarios activos: lo garantiza el índice parcial
+// users_email_active_uk (WHERE is_deleted = false), que JPA no puede declarar. Ver db/users_email_unique.sql
+@Table(name="users")
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -56,6 +61,9 @@ public class User {
     protected void onCreate() {
         this.createdAt = Instant.now();
     }
+
+    @Column(name="updated_at", nullable = false)
+    private Instant updatedAt;
 
     @Column(name = "is_deleted", nullable = false)
     private Boolean isDeleted = false;

@@ -1,4 +1,4 @@
-package com.mecai.car.model.enums;
+package com.mecai.car.models.enums;
 
 public enum Role {
     SUPERADMIN,  // Dueño del sistema
